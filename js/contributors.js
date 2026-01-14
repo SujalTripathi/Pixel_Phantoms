@@ -16,6 +16,125 @@ const POINTS = {
   DEFAULT: 1,
 };
 
+// -----------------------------
+// UI Helpers: Icons, Counters
+// -----------------------------
+
+// SVG Icon system (20px x 20px, uses currentColor)
+const GitHubIcons = {
+  repos: `<svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" focusable="false"><title>Repositories</title><path d="M2 4.5A1.5 1.5 0 013.5 3h13A1.5 1.5 0 0118 4.5v9A1.5 1.5 0 0116.5 15H3.5A1.5 1.5 0 012 13.5v-9zM4 5v8h12V5H4z"/></svg>`,
+  followers: `<svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" focusable="false"><title>Followers</title><path d="M10 11a3 3 0 100-6 3 3 0 000 6zm-6 7a6 6 0 0112 0H4z"/></svg>`,
+  following: `<svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" focusable="false"><title>Following</title><path d="M13 7a3 3 0 11-6 0 3 3 0 016 0zm3 9a7 7 0 10-12 0h12z"/></svg>`
+};
+
+function getStatIcon(statType) {
+  return GitHubIcons[statType] || '';
+}
+
+// Number formatting
+function formatNumber(num) {
+  const n = Number(num) || 0;
+  return n.toLocaleString('en-US');
+}
+
+// Easing
+function easeOutQuart(t) {
+  return 1 - Math.pow(1 - t, 4);
+}
+
+// Animate counter (0 -> end) using requestAnimationFrame
+function animateCounter(element, start, end, duration = 800) {
+  if (!element || typeof end === 'undefined' || isNaN(Number(end))) {
+    if (element) element.textContent = '—';
+    return;
+  }
+
+  let startTime = null;
+  const final = Number(end);
+  const diff = final - start;
+  const prefReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (prefReduced || duration === 0) {
+    element.textContent = formatNumber(final);
+    element.setAttribute('aria-live', 'polite');
+    return;
+  }
+
+  function step(timestamp) {
+    if (!startTime) startTime = timestamp;
+    const elapsed = timestamp - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = easeOutQuart(progress);
+    const current = Math.round(start + diff * eased);
+    element.textContent = formatNumber(current);
+
+    if (progress < 1) {
+      element._rafId = requestAnimationFrame(step);
+    } else {
+      element.textContent = formatNumber(final);
+      element.setAttribute('aria-live', 'polite');
+      if (element._rafId) delete element._rafId;
+    }
+  }
+
+  // Cancel any existing animation
+  if (element._rafId) cancelAnimationFrame(element._rafId);
+  element._rafId = requestAnimationFrame(step);
+}
+
+function updateStatWithAnimation(valueElement, value) {
+  if (!valueElement) return;
+  // Remove skeleton styling and animate
+  valueElement.classList.remove('stat-skeleton');
+  animateCounter(valueElement, 0, value, 800);
+  // mark as loaded to allow CSS hooks
+  setTimeout(() => valueElement.classList.add('stat-loaded'), 820);
+}
+
+// Skeleton helpers
+function showStatSkeleton(statItem) {
+  const valueEl = statItem.querySelector('.stat-value');
+  if (valueEl) {
+    valueEl.classList.add('stat-skeleton');
+    valueEl.textContent = '';
+    valueEl.setAttribute('aria-label', 'Loading stats');
+  }
+}
+
+function hideStatSkeleton(statItem) {
+  const valueEl = statItem.querySelector('.stat-value');
+  if (valueEl) {
+    valueEl.classList.remove('stat-skeleton');
+  }
+}
+
+// Tooltip helper
+function addTooltip(statItem, tooltipText) {
+  if (!statItem || !tooltipText) return;
+  // Avoid duplicates
+  if (statItem.querySelector('.stat-tooltip')) return;
+
+  const id = `stat-tooltip-${Math.random().toString(36).slice(2, 9)}`;
+  const tooltip = document.createElement('div');
+  tooltip.className = 'stat-tooltip';
+  tooltip.id = id;
+  tooltip.role = 'tooltip';
+  tooltip.textContent = tooltipText;
+  statItem.appendChild(tooltip);
+  statItem.setAttribute('aria-describedby', id);
+}
+
+// Error handling
+function handleStatLoadError(statItem) {
+  if (!statItem) return;
+  const valueEl = statItem.querySelector('.stat-value');
+  if (valueEl) {
+    valueEl.classList.remove('stat-skeleton');
+    valueEl.textContent = '—';
+    valueEl.setAttribute('aria-label', 'Stat unavailable');
+  }
+}
+
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   initData();
@@ -337,19 +456,19 @@ function renderContributors(page) {
             
             <!-- GitHub Stats Section -->
             <div class="github-stats">
-              <div class="stat-item skeleton">
-                <span class="stat-icon">📦</span>
-                <span class="stat-value" data-stat="repos">0</span>
+              <div class="stat-item" data-stat="repos" aria-label="Total public repositories" tabindex="0">
+                <span class="stat-icon-container" aria-hidden="true">${getStatIcon('repos')}</span>
+                <span class="stat-value stat-skeleton" data-stat="repos" aria-live="polite"></span>
                 <span class="stat-label">Repos</span>
               </div>
-              <div class="stat-item skeleton">
-                <span class="stat-icon">👥</span>
-                <span class="stat-value" data-stat="followers">0</span>
+              <div class="stat-item" data-stat="followers" aria-label="GitHub followers count" tabindex="0">
+                <span class="stat-icon-container" aria-hidden="true">${getStatIcon('followers')}</span>
+                <span class="stat-value stat-skeleton" data-stat="followers" aria-live="polite"></span>
                 <span class="stat-label">Followers</span>
               </div>
-              <div class="stat-item skeleton">
-                <span class="stat-icon">🔗</span>
-                <span class="stat-value" data-stat="following">0</span>
+              <div class="stat-item" data-stat="following" aria-label="Accounts this user follows" tabindex="0">
+                <span class="stat-icon-container" aria-hidden="true">${getStatIcon('following')}</span>
+                <span class="stat-value stat-skeleton" data-stat="following" aria-live="polite"></span>
                 <span class="stat-label">Following</span>
               </div>
             </div>
@@ -665,23 +784,26 @@ async function displayGitHubStats(card, username) {
     const reposContainer = card.querySelector('.recent-repos');
     
     if (statsContainer) {
+        // Render skeleton stat items with icon containers and value placeholders
         statsContainer.innerHTML = `
-            <div class="stat-item skeleton">
-                <span class="stat-icon">📦</span>
-                <span class="stat-value">...</span>
+            <div class="stat-item" data-stat="repos" aria-label="Total public repositories" tabindex="0">
+                <span class="stat-icon-container" aria-hidden="true">${getStatIcon('repos')}</span>
+                <span class="stat-value stat-skeleton" data-stat="repos" aria-live="polite"></span>
                 <span class="stat-label">Repos</span>
             </div>
-            <div class="stat-item skeleton">
-                <span class="stat-icon">👥</span>
-                <span class="stat-value">...</span>
+            <div class="stat-item" data-stat="followers" aria-label="GitHub followers count" tabindex="0">
+                <span class="stat-icon-container" aria-hidden="true">${getStatIcon('followers')}</span>
+                <span class="stat-value stat-skeleton" data-stat="followers" aria-live="polite"></span>
                 <span class="stat-label">Followers</span>
             </div>
-            <div class="stat-item skeleton">
-                <span class="stat-icon">🔗</span>
-                <span class="stat-value">...</span>
+            <div class="stat-item" data-stat="following" aria-label="Accounts this user follows" tabindex="0">
+                <span class="stat-icon-container" aria-hidden="true">${getStatIcon('following')}</span>
+                <span class="stat-value stat-skeleton" data-stat="following" aria-live="polite"></span>
                 <span class="stat-label">Following</span>
             </div>
         `;
+
+        // The placeholder values will be animated once the data arrives
     }
 
     // Fetch stats and repos in parallel
@@ -690,33 +812,49 @@ async function displayGitHubStats(card, username) {
         fetchRecentRepos(username)
     ]);
 
-    // Display stats
+    // Display stats (animated and accessible)
     if (stats && statsContainer) {
         console.log(`✅ Displaying stats for ${username}:`, stats);
-        statsContainer.innerHTML = `
-            <div class="stat-item">
-                <span class="stat-icon">📦</span>
-                <span class="stat-value" data-stat="repos">${stats.public_repos}</span>
-                <span class="stat-label">Repos</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-icon">👥</span>
-                <span class="stat-value" data-stat="followers">${stats.followers}</span>
-                <span class="stat-label">Followers</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-icon">🔗</span>
-                <span class="stat-value" data-stat="following">${stats.following}</span>
-                <span class="stat-label">Following</span>
-            </div>
-        `;
+
+        const mapping = {
+            repos: stats.public_repos,
+            followers: stats.followers,
+            following: stats.following,
+        };
+
+        const tooltips = {
+            repos: 'Total public repositories',
+            followers: 'GitHub followers count',
+            following: 'Accounts this user follows',
+        };
+
+        Object.keys(mapping).forEach(key => {
+            const statItem = statsContainer.querySelector(`.stat-item[data-stat="${key}"]`);
+            if (!statItem) return;
+
+            // Ensure icon is SVG and accessible
+            const iconContainer = statItem.querySelector('.stat-icon-container');
+            if (iconContainer) iconContainer.innerHTML = getStatIcon(key);
+
+            const valueEl = statItem.querySelector('.stat-value');
+            if (valueEl) {
+                // Animate from 0 → value
+                updateStatWithAnimation(valueEl, mapping[key]);
+            }
+
+            // Tooltip
+            addTooltip(statItem, tooltips[key]);
+
+            // Remove item-level skeleton modifier if present
+            statItem.classList.remove('skeleton');
+        });
+
     } else if (statsContainer) {
-        statsContainer.innerHTML = `
-            <div class="stat-error">
-                <i class="fas fa-exclamation-circle"></i>
-                <span>Stats not available</span>
-            </div>
-        `;
+        // Gracefully degrade: mark each stat item as unavailable
+        ['repos','followers','following'].forEach(key => {
+            const statItem = statsContainer.querySelector(`.stat-item[data-stat="${key}"]`);
+            if (statItem) handleStatLoadError(statItem);
+        });
     }
 
     // Display recent repos
@@ -807,15 +945,45 @@ function initGitHubIntegrations() {
         return;
     }
     
-    contributorCards.forEach((card, index) => {
-        const username = card.getAttribute('data-github');
-        if (username) {
-            console.log(`Processing card ${index + 1}: ${username}`);
-            displayGitHubStats(card, username);
-        } else {
-            console.warn(`Card ${index + 1} has no data-github attribute`);
-        }
-    });
+    // Use IntersectionObserver to only fetch & animate stats when card is visible
+    if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                const card = entry.target;
+                if (!card || card.dataset.statsLoaded === 'true') {
+                    obs.unobserve(card);
+                    return;
+                }
+
+                const cardsArray = Array.from(contributorCards);
+                const index = cardsArray.indexOf(card);
+                const delay = Math.max(0, index) * 100; // 100ms stagger per card
+
+                setTimeout(() => {
+                    const username = card.getAttribute('data-github');
+                    if (username) {
+                        console.log(`Processing visible card: ${username}`);
+                        displayGitHubStats(card, username);
+                        card.dataset.statsLoaded = 'true';
+                    }
+                    obs.unobserve(card);
+                }, delay);
+            });
+        }, { threshold: 0.25 });
+
+        contributorCards.forEach(card => observer.observe(card));
+
+    } else {
+        // Fallback: staggered immediate execution
+        contributorCards.forEach((card, index) => {
+            const delay = index * 100;
+            setTimeout(() => {
+                const username = card.getAttribute('data-github');
+                if (username) displayGitHubStats(card, username);
+            }, delay);
+        });
+    }
 
     // Initialize calendars after a delay to ensure library is loaded
     setTimeout(() => {
