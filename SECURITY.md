@@ -54,12 +54,37 @@ We only support the latest version at [pixelphantoms.netlify.app](https://pixelp
 ---
 ## ✅ Security Guidelines for Contributors
 
+### Environment Variables & Secrets
+
+**⚠️ CRITICAL SECURITY RULES:**
+
+1. **Never commit `.env` files**
+   - Always use `.env.example` for documentation
+   - The `.env` file is excluded via `.gitignore`
+   - See [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md) for proper setup
+
+2. **If you accidentally commit secrets:**
+   - Immediately report to maintainers (private email, not public issue)
+   - Follow the credential rotation guide in [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md#if-credentials-are-exposed)
+   - Remove from Git history using `git filter-branch` or BFG Repo-Cleaner
+   - Change all exposed passwords/tokens immediately
+
+3. **Credential Rotation Schedule:**
+   - Database passwords: Every 90 days
+   - JWT secrets: Every 180 days or after any suspected compromise
+   - Email app passwords: Every 180 days
+   - Production secrets: Immediately after any team member departure
+
+### Code Security Best Practices
+
 - Validate and sanitize all user inputs
 - Use HTTPS for external resources
 - Never hardcode sensitive information
 - Implement proper access controls
 - Keep dependencies updated
 - Use `rel="noopener noreferrer"` for external links
+- Enable GitHub secret scanning (maintainers)
+- Use environment-specific credentials (dev/staging/prod)
 
 ---
 ## 📚 Additional Resources

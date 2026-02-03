@@ -106,7 +106,7 @@ Our events page features a **client-side view counter** that tracks event popula
 
 ---
 
-## �📦 How to Install & Run Locally
+## 📦 Installation & Local Setup
 
 ### Prerequisites
 
@@ -114,6 +114,7 @@ Our events page features a **client-side view counter** that tracks event popula
 - 🐙 **Git** – Required for cloning the repository
 - ⚙️ **Node.js (v16+)** and **npm** – For development tooling
 - 💡 **VS Code** with Live Server extension (Recommended)
+- 🗄️ **PostgreSQL** – Required for backend functionality (optional for frontend-only work)
 
 ### Step-by-Step Setup
 
@@ -121,10 +122,23 @@ Our events page features a **client-side view counter** that tracks event popula
    ```bash
    git clone https://github.com/sayeeg-11/Pixel_Phantoms.git
    cd Pixel_Phantoms
+   ```
+
 2. **Install Dependencies (Recommended for contributors)**
-    ```bash
-    npm install
-**Run the Website Locally**
+   ```bash
+   npm install
+   ```
+
+3. **Configure Environment Variables (Required for backend)**
+   ```bash
+   cp .env.example .env
+   ```
+   
+   📖 **Follow the detailed setup guide:** [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md)
+   
+   ⚠️ **Important:** Never commit your `.env` file! It contains sensitive credentials.
+
+4. **Run the Website Locally**
 
 ✅ Option 1: Live Server (Recommended)
 

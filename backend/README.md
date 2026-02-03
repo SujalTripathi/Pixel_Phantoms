@@ -2,6 +2,23 @@
 
 This directory contains the backend implementation with a centralized error handling system for standardized API responses.
 
+## � Environment Setup
+
+**⚠️ CRITICAL:** Before running the backend, you must configure environment variables.
+
+1. **Copy the example file:**
+   ```bash
+   cp ../.env.example ../.env
+   ```
+
+2. **Follow the setup guide:** See [ENVIRONMENT_SETUP.md](../ENVIRONMENT_SETUP.md) for detailed instructions on:
+   - Database configuration
+   - JWT secret generation
+   - Email service setup
+   - Security best practices
+
+3. **Never commit `.env` files** - They contain sensitive credentials and are excluded via `.gitignore`
+
 ## 📁 Structure
 
 ```
@@ -11,8 +28,10 @@ backend/
 │   │   └── errorMiddleware.js   # Global error handling middleware
 │   ├── server.js                 # Example Express server setup
 │   └── ...
-├── .env                          # Environment variables
+├── package.json                  # Backend dependencies
 └── README.md                     # This file
+
+Note: .env is NOT tracked in git (see ../.env.example for template)
 ```
 
 ## 🎯 Features
